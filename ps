@@ -1,0 +1,12 @@
+   $f = "$env:USERPROFILE\otel\copilot-otel.jsonl"
+   Get-Content $f | ForEach-Object { $_ | ConvertFrom-Json } |
+     Where-Object { $_.attributes.'gen_ai.operation.name' } |
+     Select-Object `
+       @{n='op';    e={ $_.attributes.'gen_ai.operation.name' }},
+       @{n='label'; e={ $_.attributes.'copilot_chat.debug_log_label' }},
+       @{n='model'; e={ $_.attributes.'gen_ai.request.model' }},
+       @{n='tool';  e={ $_.attributes.'gen_ai.tool.name' }},
+       @{n='in';    e={ $_.attributes.'gen_ai.usage.input_tokens' }},
+       @{n='out';   e={ $_.attributes.'gen_ai.usage.output_tokens' }},
+       @{n='ttft';  e={ $_.attributes.'copilot_chat.time_to_first_token' }} |
+     Format-Table -AutoSize
