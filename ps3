@@ -1,0 +1,19 @@
+$f = "$env:USERPROFILE\otel\copilot-cli.jsonl"   # or copilot-otel.jsonl for VS Code
+Get-Content $f | ForEach-Object { $_ | ConvertFrom-Json } |
+  Where-Object { $_.attributes.'gen_ai.operation.name' -and -not $_.hrTime } |
+  Select-Object `
+    @{n='svc';    e={ $_.resource.attributes.'service.name' }},
+    @{n='op';     e={ $_.attributes.'gen_ai.operation.name' }},
+    @{n='model';  e={ $_.attributes.'gen_ai.request.model' }},
+    @{n='tool';   e={ $_.attributes.'gen_ai.tool.name' }},
+    @{n='in';     e={ $_.attributes.'gen_ai.usage.input_tokens' }},
+    @{n='cached'; e={ $_.attributes.'gen_ai.usage.cache_read.input_tokens' }},
+    @{n='out';    e={ $_.attributes.'gen_ai.usage.output_tokens' }},
+    @{n='ttft_ms';e={ $a = $_.attributes
+                      if ($a.'copilot_chat.time_to_first_token') { $a.'copilot_chat.time_to_first_token' }
+                      elseif ($a.'gen_ai.response.time_to_first_chunk') { [math]::Round($a.'gen_ai.response.time_to_first_chunk' * 1000) } }},
+    @{n='nanoAiu';e={ $a = $_.attributes
+                      if ($null -ne $a.'github.copilot.nano_aiu') { $a.'github.copilot.nano_aiu' }
+                      else { $a.'copilot_chat.copilot_usage_nano_aiu' } }},
+    @{n='ms';     e={ if ($_.duration -is [array]) { [math]::Round($_.duration[0]*1000 + $_.duration[1]/1e6) } }} |
+  Format-Table -AutoSize
